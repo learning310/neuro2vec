@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 def get_1d_sincos_pos_embed(embed_dim, grid_size, cls_token=False):
     grid = np.arange(grid_size, dtype=np.float32)
@@ -26,3 +27,9 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
 
     emb = np.concatenate([emb_sin, emb_cos], axis=1)  # (M, D)
     return emb
+
+def adjust_learning_rate(optimizer, epoch, args):
+    """Decay the learning rate based on schedule"""
+    lr = args.lr
+    lr *= 0.5 * (1. + math.cos(math.pi * epoch / args.epochs))
+    optimizer.param_groups[0]['lr'] = lr

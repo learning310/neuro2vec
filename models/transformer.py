@@ -48,6 +48,7 @@ class Attention(nn.Module):
             nn.Linear(dim, dim),
             nn.Dropout(dropout)
         )
+        self.attn_drop = nn.Dropout(dropout)
 
     def forward(self, x, mask=None):
         b, n, _, h = *x.shape, self.heads
@@ -64,6 +65,7 @@ class Attention(nn.Module):
             del mask
 
         attn = dots.softmax(dim=-1)
+        attn = self.attn_drop(attn)
 
         out = torch.einsum('bhij,bhjd->bhid', attn, v)
         out = rearrange(out, 'b h n d -> b n (h d)')

@@ -23,5 +23,5 @@ This is an unofficical implementation about the paper "[neuro2vec: Masked Fourie
 > using the model of last epoch for evaluation
 
 - supervised for transformer
-  - `Exp` Acc -> 80.96, F1 -> 74.23
+  - `Exp` Acc -> 82.06, F1 -> 75.43
   - `Paper` Acc -> 84.20 F1 -> 77.15

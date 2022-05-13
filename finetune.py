@@ -21,8 +21,6 @@ parser.add_argument('--device', default='cuda', type=str,
                     help='cpu or cuda')
 parser.add_argument('--home_path', default=home_dir, type=str,
                     help='Project home directory')
-parser.add_argument('--bs', default=128, type=int,
-                    help='Project home directory')
 args = parser.parse_args()
 
 ####### fix random seeds for reproducibility ########
@@ -42,7 +40,7 @@ experiment_log_dir = os.path.join(
     logs_save_dir, experiment_description, run_description, f"seed_{SEED}")
 os.makedirs(experiment_log_dir, exist_ok=True)
 
-train_dataset = torch.load(os.path.join('train.pt'))
+train_dataset = torch.load(os.path.join('./data/train.pt'))
 train_dataset = Load_Dataset(train_dataset)
 train_loader = torch.utils.data.DataLoader(
     dataset=train_dataset, batch_size=128, shuffle=True, drop_last=False, num_workers=0)
@@ -78,7 +76,7 @@ for i in range(40):
     print("Training->Epoch:{:0>2d}, Loss:{:.3f}, Acc:{:.3f}".format(i,
         torch.tensor(total_loss).mean(), torch.tensor(total_acc).mean()))
 
-test_dataset = torch.load(os.path.join('test.pt'))
+test_dataset = torch.load(os.path.join('./data/test.pt'))
 test_dataset = Load_Dataset(test_dataset)
 test_loader = torch.utils.data.DataLoader(
     dataset=test_dataset, batch_size=128, shuffle=False, drop_last=False, num_workers=0)

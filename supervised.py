@@ -6,6 +6,7 @@ import argparse
 from models.tit import TimeTransformer
 from misc.dataset import Load_Dataset
 from misc.metrics import accuracy_metric, _calc_metrics
+from misc.utils import adjust_learning_rate
 
 home_dir = os.getcwd()
 parser = argparse.ArgumentParser()
@@ -21,6 +22,10 @@ parser.add_argument('--device', default='cuda', type=str,
                     help='cpu or cuda')
 parser.add_argument('--home_path', default=home_dir, type=str,
                     help='Project home directory')
+parser.add_argument('--epochs', default=40, type=int,
+                    help='total number of traning epoch')
+parser.add_argument('--lr', default=3e-4, type=float,
+                    help='the inital learning rate')
 args = parser.parse_args()
 
 ####### fix random seeds for reproducibility ########
@@ -47,9 +52,10 @@ train_loader = torch.utils.data.DataLoader(
 
 criterion = nn.CrossEntropyLoss()
 model = TimeTransformer().to(device)
+optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=5e-2)
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.999), weight_decay=1e-2)
-for i in range(40):
+model.train()
+for epoch in range(args.epochs):
     total_loss = []
     total_acc = []
     model.train()
@@ -62,13 +68,16 @@ for i in range(40):
         total_acc.append(accuracy_metric(pred, label))
         loss.backward()
         optimizer.step()
-    print("Training->Epoch:{:0>2d}, Loss:{:.3f}, Acc:{:.3f}.".format(i,
+    print("Training->Epoch:{:0>2d}, Loss:{:.3f}, Acc:{:.3f}.".format(epoch,
         torch.tensor(total_loss).mean(), torch.tensor(total_acc).mean()))
+
+chkpoint = {'model': model.state_dict()} 
+torch.save(chkpoint, os.path.join(home_dir, 'supervised.pt'))
 
 test_dataset = torch.load(os.path.join('./data/test.pt'))
 test_dataset = Load_Dataset(test_dataset)
 test_loader = torch.utils.data.DataLoader(
-    dataset=test_dataset, batch_size=128, shuffle=False, drop_last=False, num_workers=0)
+    dataset=test_dataset, batch_size=512, shuffle=False, drop_last=False, num_workers=0)
 
 model.eval()
 with torch.no_grad():

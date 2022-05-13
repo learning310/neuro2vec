@@ -3,3 +3,4 @@ __pycache__
 /data/
 /experiments_logs/
 models/idea.py
+*.pt
