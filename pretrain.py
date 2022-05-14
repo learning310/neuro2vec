@@ -50,10 +50,11 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=3e-3, betas=(0.9, 0.999), w
 
 mask_ratio = 0.1
 interval = 50
-model.train()
+
 for i in range(1, 600+1):
     total_loss = []
     total_acc = []
+    model.train()
     for _, (data, label) in enumerate(train_loader):
         data, label = data.float().to(device), label.long().to(device)
         optimizer.zero_grad()

@@ -54,7 +54,6 @@ criterion = nn.CrossEntropyLoss()
 model = TimeTransformer().to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=5e-2)
 
-model.train()
 for epoch in range(args.epochs):
     total_loss = []
     total_acc = []

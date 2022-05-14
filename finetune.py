@@ -60,10 +60,11 @@ model_dict.update(pretrained_dict)
 model.load_state_dict(model_dict)
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.999), weight_decay=1e-2)
-model.train()
+
 for i in range(40):
     total_loss = []
     total_acc = []
+    model.train()
     for _, (data, label) in enumerate(train_loader):
         data, label = data.float().to(device), label.long().to(device)
         optimizer.zero_grad()

@@ -16,14 +16,14 @@ This is an unofficical implementation about the paper "[neuro2vec: Masked Fourie
 - the pooling method of Transformer -> `cls token`
 - the position embedding -> `Sinusoidal`
 - the implementation of heads -> `Linear`
-- the initialization of pos_embed and mask_token -> `zero`
+- the initialization of mask_token -> `zero`
 
 ## Experimental results
 
 > using the model of last epoch for evaluation
 
 - supervised for transformer
-  - `Exp` Acc -> 82.06, F1 -> 75.43
+  - `Exp` Acc -> 82.78, F1 -> 76.31
   - `Paper` Acc -> 84.20 F1 -> 77.15
 
 ## Experience

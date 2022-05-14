@@ -1,4 +1,3 @@
-from requests import patch
 import torch
 import os
 from models.neuro2vec import neuro2vec

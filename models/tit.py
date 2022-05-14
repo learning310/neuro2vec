@@ -9,7 +9,7 @@ class PatchEmbed(nn.Module):
     def __init__(self, patch_size, in_chans, embed_dim):
         super().__init__()
         self.proj = nn.Sequential(
-            nn.Conv1d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size),
+            nn.Conv1d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=False),
             Rearrange('b c l -> b l c')
         )
     
