@@ -44,11 +44,11 @@ class Attention(nn.Module):
         self.scale = dim ** -0.5
 
         self.to_qkv = nn.Linear(dim, dim * 3, bias=False)
+        self.attn_drop = nn.Dropout(dropout)
         self.to_out = nn.Sequential(
             nn.Linear(dim, dim),
             nn.Dropout(dropout)
         )
-        self.attn_drop = nn.Dropout(dropout)
 
     def forward(self, x, mask=None):
         b, n, _, h = *x.shape, self.heads
@@ -85,7 +85,7 @@ class Transformer(nn.Module):
             ]))
 
     def forward(self, x, mask=None):
-        for attn, ff in self.layers:
+        for depth, (attn, ff) in enumerate(self.layers):
             x = attn(x, mask=mask)
             x = ff(x)
         return x

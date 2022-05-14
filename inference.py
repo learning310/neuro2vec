@@ -51,7 +51,18 @@ with torch.no_grad():
     trgs = np.array([])
     for data, label in test_loader:
         data, label = data.float().to(device), label.long().to(device)
-        pred= model(data)
+        pred = model(data)
         loss = criterion(pred, label)
         total_loss.append(loss.item())
         pred = pred.max(1, keepdim=True)[1]
+
+# import matplotlib.pyplot as plt
+# att_map = torch.load('./map1.pt')
+# fig, ax = plt.subplots(2,2)
+
+# ax[0][0].imshow(att_map[0], interpolation='nearest', cmap='Reds')
+# ax[0][1].imshow(att_map[1], interpolation='nearest', cmap='Reds')
+# ax[1][0].imshow(att_map[2], interpolation='nearest', cmap='Reds')
+# ax[1][1].imshow(att_map[3], interpolation='nearest', cmap='Reds')
+
+# plt.show()

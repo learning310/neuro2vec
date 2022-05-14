@@ -88,7 +88,7 @@ with torch.no_grad():
     trgs = np.array([])
     for data, label in test_loader:
         data, label = data.float().to(device), label.long().to(device)
-        pred= model(data)
+        pred = model(data)
         loss = criterion(pred, label)
         total_loss.append(loss.item())
         pred = pred.max(1, keepdim=True)[1]

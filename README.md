@@ -25,3 +25,7 @@ This is an unofficical implementation about the paper "[neuro2vec: Masked Fourie
 - supervised for transformer
   - `Exp` Acc -> 82.06, F1 -> 75.43
   - `Paper` Acc -> 84.20 F1 -> 77.15
+
+## Experience
+
+1. PreNorm better than PostNorm
