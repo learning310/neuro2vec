@@ -33,3 +33,8 @@ def adjust_learning_rate(optimizer, epoch, args):
     lr = args.lr
     lr *= 0.5 * (1. + math.cos(math.pi * epoch / args.epochs))
     optimizer.param_groups[0]['lr'] = lr
+
+def set_requires_grad(model, dict_, requires_grad=True):
+    for param in model.named_parameters():
+        if param[0] in dict_:
+            param[1].requires_grad = requires_grad

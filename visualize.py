@@ -3,7 +3,7 @@ import os
 from models.neuro2vec import neuro2vec
 import matplotlib.pyplot as plt
 
-masking_ratio = 0.1
+masking_ratio = 0.4
 patch_size = 30
 
 def run_one_epoch(signal, model):
@@ -26,7 +26,7 @@ def run_one_epoch(signal, model):
     mask = mask.detach()
     mask = mask.unsqueeze(-1).repeat(1, 1, patch_size)
     mask = mask.reshape(-1)
-    im_masked = signal * (mask)
+    im_masked = signal * (1-mask)
     plt.subplot(3, 1, 2)
     plt.xticks([])
     plt.plot(im_masked)
@@ -42,7 +42,7 @@ def run_one_epoch(signal, model):
 
 device = torch.device('cpu')
 model = neuro2vec().to(device)
-chkpoint = torch.load(os.path.abspath("./epoch50_chkpoint.pt"))
+chkpoint = torch.load(os.path.abspath("./epoch100_chkpoint.pt"))
 model.load_state_dict(chkpoint['model'])
 
 test_dataset = torch.load(os.path.join('./data/test.pt'))['samples']

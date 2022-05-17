@@ -24,7 +24,7 @@ This is an unofficical implementation about the paper "[neuro2vec: Masked Fourie
 
 - supervised for transformer
   - `Exp` Acc -> 82.78, F1 -> 76.31
-  - `Paper` Acc -> 84.20 F1 -> 77.15
+  - `Paper(Worst)` Acc -> 83.80 F1 -> 76.55
 
 ## Experience
 

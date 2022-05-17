@@ -18,7 +18,7 @@ class PatchEmbed(nn.Module):
 
 
 class TimeTransformer(nn.Module):
-    def __init__(self, signal_length=3000, patch_size=30, pool='cls', in_chans=1, embed_dim=128,
+    def __init__(self, signal_length=3000, patch_size=30, pool='mean', in_chans=1, embed_dim=128,
                 depth=4, num_heads=4, mlp_ratio=4, dropout=0.2, num_classes=5):
         super().__init__()
 

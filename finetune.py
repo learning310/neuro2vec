@@ -6,6 +6,7 @@ import argparse
 from models.tit import TimeTransformer
 from misc.dataset import Load_Dataset
 from misc.metrics import accuracy_metric, _calc_metrics
+from misc.utils import adjust_learning_rate, set_requires_grad
 
 home_dir = os.getcwd()
 parser = argparse.ArgumentParser()
@@ -21,6 +22,10 @@ parser.add_argument('--device', default='cuda', type=str,
                     help='cpu or cuda')
 parser.add_argument('--home_path', default=home_dir, type=str,
                     help='Project home directory')
+parser.add_argument('--epochs', default=40, type=int,
+                    help='total number of traning epoch')
+parser.add_argument('--lr', default=3e-4, type=float,
+                    help='the inital learning rate')
 args = parser.parse_args()
 
 ####### fix random seeds for reproducibility ########
@@ -49,8 +54,8 @@ criterion = nn.CrossEntropyLoss()
 model = TimeTransformer().to(device)
 
 model_dict = model.state_dict()
-pretrained_dict = torch.load(os.path.abspath("./epoch37_chkpoint.pt"))['model']
-del_list = ['pos_embed', 'mask_token','temporal_pred', ]
+pretrained_dict = torch.load(os.path.abspath("./epoch50_chkpoint.pt"))['model']
+del_list = ['pos_embed', 'mask_token','temporal_pred', 'amplitude_pred', 'phase_pred']
 pretrained_dict_copy = pretrained_dict.copy()
 for i in pretrained_dict_copy.keys():
     for j in del_list:
@@ -58,10 +63,11 @@ for i in pretrained_dict_copy.keys():
             del pretrained_dict[i]
 model_dict.update(pretrained_dict)
 model.load_state_dict(model_dict)
+# set_requires_grad(model, pretrained_dict, requires_grad=False)
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, betas=(0.9, 0.999), weight_decay=1e-2)
+optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=1e-2)
 
-for i in range(40):
+for epoch in range(args.epochs):
     total_loss = []
     total_acc = []
     model.train()
@@ -74,7 +80,8 @@ for i in range(40):
         total_acc.append(accuracy_metric(pred, label))
         loss.backward()
         optimizer.step()
-    print("Training->Epoch:{:0>2d}, Loss:{:.3f}, Acc:{:.3f}".format(i,
+    # adjust_learning_rate(optimizer, epoch, args)
+    print("Training->Epoch:{:0>2d}, Loss:{:.3f}, Acc:{:.3f}.".format(epoch,
         torch.tensor(total_loss).mean(), torch.tensor(total_acc).mean()))
 
 test_dataset = torch.load(os.path.join('./data/test.pt'))

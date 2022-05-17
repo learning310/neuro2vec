@@ -70,8 +70,8 @@ for epoch in range(args.epochs):
     print("Training->Epoch:{:0>2d}, Loss:{:.3f}, Acc:{:.3f}.".format(epoch,
         torch.tensor(total_loss).mean(), torch.tensor(total_acc).mean()))
 
-chkpoint = {'model': model.state_dict()} 
-torch.save(chkpoint, os.path.join(home_dir, 'supervised.pt'))
+# chkpoint = {'model': model.state_dict()} 
+# torch.save(chkpoint, os.path.join(home_dir, 'supervised.pt'))
 
 test_dataset = torch.load(os.path.join('./data/test.pt'))
 test_dataset = Load_Dataset(test_dataset)

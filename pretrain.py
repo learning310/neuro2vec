@@ -4,6 +4,7 @@ import torch
 import argparse
 from models.neuro2vec import neuro2vec
 from misc.dataset import Load_Dataset
+from misc.utils import adjust_learning_rate
 
 home_dir = os.getcwd()
 parser = argparse.ArgumentParser()
@@ -19,8 +20,10 @@ parser.add_argument('--device', default='cuda', type=str,
                     help='cpu or cuda')
 parser.add_argument('--home_path', default=home_dir, type=str,
                     help='Project home directory')
-parser.add_argument('--bs', default=128, type=int,
-                    help='Project home directory')
+parser.add_argument('--epochs', default=100, type=int,
+                    help='total number of traning epoch')
+parser.add_argument('--lr', default=3e-3, type=float,
+                    help='the inital learning rate')
 args = parser.parse_args()
 
 ####### fix random seeds for reproducibility ########
@@ -46,12 +49,12 @@ train_loader = torch.utils.data.DataLoader(
     dataset=train_dataset, batch_size=256, shuffle=True, drop_last=False, num_workers=0)
 
 model = neuro2vec().to(device)
-optimizer = torch.optim.AdamW(model.parameters(), lr=3e-3, betas=(0.9, 0.999), weight_decay=1e-2)
+optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=1e-2)
 
 mask_ratio = 0.1
 interval = 50
 
-for i in range(1, 600+1):
+for epoch in range(1, args.epochs+1):
     total_loss = []
     total_acc = []
     model.train()
@@ -62,7 +65,8 @@ for i in range(1, 600+1):
         total_loss.append(loss.item())
         loss.backward()
         optimizer.step()
-    print("Training->Epoch:{:0>2d}, Loss:{:.3f}".format(i,torch.tensor(total_loss).mean()))
-    if i % interval == 0:
+    adjust_learning_rate(optimizer, epoch, args)
+    print("Training->Epoch:{:0>2d}, Loss:{:.3f}".format(epoch,torch.tensor(total_loss).mean()))
+    if epoch % interval == 0:
         chkpoint = {'model': model.state_dict()} 
-        torch.save(chkpoint, os.path.join(home_dir, str('epoch'+str(i)+'_chkpoint.pt')))
+        torch.save(chkpoint, os.path.join(home_dir, str('epoch'+str(epoch)+'_chkpoint.pt')))

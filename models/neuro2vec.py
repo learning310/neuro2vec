@@ -10,7 +10,7 @@ class PatchEmbed(nn.Module):
     def __init__(self, patch_size, in_chans, embed_dim):
         super().__init__()
         self.proj = nn.Sequential(
-            nn.Conv1d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size),
+            nn.Conv1d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=False),
             Rearrange('b c l -> b l c')
         )
     
@@ -33,8 +33,8 @@ class neuro2vec(nn.Module):
         
         # heads
         self.temporal_pred = nn.Linear(embed_dim, patch_size, bias=True)
-        self.amplitude_pred = nn.Linear(self.num_patches*embed_dim, 1499)
-        # self.phase_pred = nn.Linear(self.num_patches*embed_dim, 1499)
+        self.amplitude_pred = nn.Linear(embed_dim, 1500 // self.num_patches)
+        self.phase_pred = nn.Linear(embed_dim, 1500 // self.num_patches)
        
         self.initialize_weights()
     
@@ -64,10 +64,6 @@ class neuro2vec(nn.Module):
 
         return x_masked, mask, ids_restore
     
-    def patchify(self, series):
-        x = series.reshape(shape=(series.shape[0], self.num_patches, -1))
-        return x
-
     def forward(self, inputs, mask_ratio):
         # standardization (per-epoch)
         mean = torch.mean(inputs, dim=-1)
@@ -93,21 +89,30 @@ class neuro2vec(nn.Module):
         # apply Transformer blocks
         x = self.blocks(x)
 
-        # apply heads
-        tempral_pred = self.temporal_pred(x)
-        amplitude_pred = self.amplitude_pred(x.reshape(x.shape[0], -1))
-        # phase_pred = self.phase_pred(x.reshape(x.shape[0], -1))
-
         # temporal_loss 
-        target = self.patchify(inputs)
+        tempral_pred = self.temporal_pred(x)
+
+        target = inputs.reshape((inputs.shape[0], self.num_patches, -1))
         temporal_loss = (tempral_pred - target) ** 2
         temporal_loss = temporal_loss.mean()
 
-        # amplitude_loss 
-        target = torch.fft.fft(inputs.reshape(inputs.shape[0], -1))[:, 1:1500]
-        amplitude_loss = (amplitude_pred - target.abs()) ** 2
-        amplitude_loss = amplitude_loss.mean()
+        # amplitude_loss
+        amplitude_pred = self.amplitude_pred(x)
+        phase_pred = self.phase_pred(x)
+
+        amplitude = amplitude_pred.reshape((inputs.shape[0], -1))
+        phase = phase_pred.reshape((inputs.shape[0], -1))
+        img = torch.tensor(1j, device=x.device)
+        l_fourier = amplitude + img*phase 
+        r_fourier = torch.flip(amplitude[:, 1:], [-1]) + (-img)*torch.flip(phase[:, 1:], [-1])
+        r_fourier = torch.concat(((amplitude[:, 0] + (-img)*phase[:, 0]).unsqueeze(1), r_fourier), dim=-1)
+        fourier = torch.concat((l_fourier, r_fourier), dim=-1)
+        fourier_pred = torch.fft.ifft(fourier).real
+        target = inputs.reshape((inputs.shape[0], -1))
+        fourier_loss = (fourier_pred - target) ** 2
+        fourier_loss = temporal_loss.mean()
         
-        loss = temporal_loss + amplitude_loss
+        # total loss
+        loss = temporal_loss + fourier_loss
 
         return loss, tempral_pred, mask
