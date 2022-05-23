@@ -17,8 +17,22 @@ class PatchEmbed(nn.Module):
         return self.proj(x)
 
 
+class FreqEmbed(nn.Module):
+    def __init__(self, ):
+        super().__init__()
+    
+    def forward(self, x):
+        x = x.reshape(x.shape[0], x.shape[-1])
+        win = torch.hamming_window(200).to(x.device)
+        x = torch.stft(x, n_fft=256, hop_length=100, win_length=200, window=win, return_complex=True)
+        x = torch.abs(x)
+        x = torch.tensor(20, device=x.device) * torch.log10(x)
+        x = torch.permute(x, (0, 2, 1))[:, 1:-1, :128]
+        return x
+
+
 class TimeTransformer(nn.Module):
-    def __init__(self, signal_length=3000, patch_size=30, pool='mean', in_chans=1, embed_dim=128,
+    def __init__(self, signal_length=3000, patch_size=30, pool='cls', in_chans=1, embed_dim=128,
                 depth=4, num_heads=4, mlp_ratio=4, dropout=0.2, num_classes=5):
         super().__init__()
 
@@ -44,13 +58,12 @@ class TimeTransformer(nn.Module):
         # embed patches
         x = self.patch_embed(x)
 
-        # add pos embed w/o cls token
-        x = x + self.pos_embed[:, 1:, :]
-
         # append cls token
-        cls_token = self.cls_token + self.pos_embed[:, :1, :]
-        cls_tokens = cls_token.expand(x.shape[0], -1, -1)
+        cls_tokens = self.cls_token.expand(x.shape[0], -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
+
+        # add position embedding
+        x = x + self.pos_embed
 
         # apply Transformer blocks
         x = self.dropout(x)

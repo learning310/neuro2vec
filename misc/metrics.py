@@ -2,20 +2,8 @@ import torch
 import os
 import numpy as np
 import pandas as pd
-from sklearn.metrics import classification_report, cohen_kappa_score, confusion_matrix, accuracy_score, f1_score
+from sklearn.metrics import classification_report, cohen_kappa_score, confusion_matrix, accuracy_score
 
-def accuracy_metric(output, target):
-    with torch.no_grad():
-        pred = torch.argmax(output, dim=1)
-        assert pred.shape[0] == len(target)
-    return accuracy_score(pred.cpu().numpy(), target.data.cpu().numpy())
-
-
-def f1_metric(output, target):
-    with torch.no_grad():
-        pred = torch.argmax(output, dim=1)
-        assert pred.shape[0] == len(target)
-    return f1_score(pred.cpu().numpy(), target.data.cpu().numpy(), average='macro')
 
 def _calc_metrics(pred_labels, true_labels, log_dir, home_path):
     pred_labels = np.array(pred_labels).astype(int)

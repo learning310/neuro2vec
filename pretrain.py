@@ -20,7 +20,7 @@ parser.add_argument('--device', default='cuda', type=str,
                     help='cpu or cuda')
 parser.add_argument('--home_path', default=home_dir, type=str,
                     help='Project home directory')
-parser.add_argument('--epochs', default=100, type=int,
+parser.add_argument('--epochs', default=200, type=int,
                     help='total number of traning epoch')
 parser.add_argument('--lr', default=3e-3, type=float,
                     help='the inital learning rate')

@@ -54,7 +54,7 @@ criterion = nn.CrossEntropyLoss()
 model = TimeTransformer().to(device)
 
 model_dict = model.state_dict()
-pretrained_dict = torch.load(os.path.abspath("./epoch50_chkpoint.pt"))['model']
+pretrained_dict = torch.load(os.path.abspath("./epoch200_chkpoint.pt"))['model']
 del_list = ['pos_embed', 'mask_token','temporal_pred', 'amplitude_pred', 'phase_pred']
 pretrained_dict_copy = pretrained_dict.copy()
 for i in pretrained_dict_copy.keys():
@@ -63,7 +63,7 @@ for i in pretrained_dict_copy.keys():
             del pretrained_dict[i]
 model_dict.update(pretrained_dict)
 model.load_state_dict(model_dict)
-# set_requires_grad(model, pretrained_dict, requires_grad=False)
+set_requires_grad(model, pretrained_dict, requires_grad=False)
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=1e-2)
 

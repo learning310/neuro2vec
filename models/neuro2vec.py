@@ -1,4 +1,3 @@
-from requests import head
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -107,12 +106,12 @@ class neuro2vec(nn.Module):
         r_fourier = torch.flip(amplitude[:, 1:], [-1]) + (-img)*torch.flip(phase[:, 1:], [-1])
         r_fourier = torch.concat(((amplitude[:, 0] + (-img)*phase[:, 0]).unsqueeze(1), r_fourier), dim=-1)
         fourier = torch.concat((l_fourier, r_fourier), dim=-1)
-        fourier_pred = torch.fft.ifft(fourier).real
+        fourier_pred = torch.fft.ifft(fourier, dim=-1, norm='forward').real
         target = inputs.reshape((inputs.shape[0], -1))
         fourier_loss = (fourier_pred - target) ** 2
-        fourier_loss = temporal_loss.mean()
+        fourier_loss = fourier_loss.mean()
         
         # total loss
         loss = temporal_loss + fourier_loss
 
-        return loss, tempral_pred, mask
+        return loss, tempral_pred, mask, fourier_pred

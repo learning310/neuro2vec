@@ -5,7 +5,7 @@ import torch.nn as nn
 import argparse
 from models.tit import TimeTransformer
 from misc.dataset import Load_Dataset
-from misc.metrics import accuracy_metric, _calc_metrics
+from misc.metrics import _calc_metrics
 from misc.utils import adjust_learning_rate
 
 home_dir = os.getcwd()
@@ -64,7 +64,7 @@ for epoch in range(args.epochs):
         pred = model(data)
         loss = criterion(pred, label)
         total_loss.append(loss.item())
-        total_acc.append(accuracy_metric(pred, label))
+        total_acc.append(label.eq(pred.detach().argmax(dim=1)).float().mean())
         loss.backward()
         optimizer.step()
     print("Training->Epoch:{:0>2d}, Loss:{:.3f}, Acc:{:.3f}.".format(epoch,
