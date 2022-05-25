@@ -22,12 +22,14 @@ class FreqEmbed(nn.Module):
         super().__init__()
     
     def forward(self, x):
-        x = x.reshape(x.shape[0], x.shape[-1])
-        win = torch.hamming_window(200).to(x.device)
-        x = torch.stft(x, n_fft=256, hop_length=100, win_length=200, window=win, return_complex=True)
-        x = torch.abs(x)
-        x = torch.tensor(20, device=x.device) * torch.log10(x)
-        x = torch.permute(x, (0, 2, 1))[:, 1:-1, :128]
+        with torch.no_grad():
+            length = 200
+            x = x.reshape(x.shape[0], x.shape[-1])
+            win = torch.hamming_window(length).to(x.device)
+            x = torch.stft(x, n_fft=256, hop_length=length//2, win_length=length, window=win, return_complex=True)
+            x = torch.abs(x)
+            x = torch.tensor(20, device=x.device) * torch.log10(x)
+            x = torch.permute(x, (0, 2, 1))[:, 1:-1, :128]
         return x
 
 
@@ -43,15 +45,19 @@ class TimeTransformer(nn.Module):
 
         self.patch_embed = PatchEmbed(patch_size, in_chans, embed_dim)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches + 1, embed_dim), requires_grad=False)
+        if self.pool == 'cls':
+            self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches+1, embed_dim), requires_grad=False)
+        else:
+            self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches, embed_dim), requires_grad=False)
         self.dropout = nn.Dropout(dropout)
         self.blocks = Transformer(embed_dim, depth, num_heads, mlp_ratio, dropout)
         self.classifier = nn.Linear(embed_dim, num_classes)
-        
+        self.avg_pool = nn.AdaptiveAvgPool1d(1)
         self.initialize_weights()
 
     def initialize_weights(self):
-        pos_embed = get_1d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.num_patches), cls_token=True)
+        pos_embed = get_1d_sincos_pos_embed(
+            self.pos_embed.shape[-1], int(self.num_patches), cls_token=True if self.pool == 'cls' else False)
         self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
     
     def forward(self, x):
@@ -59,8 +65,9 @@ class TimeTransformer(nn.Module):
         x = self.patch_embed(x)
 
         # append cls token
-        cls_tokens = self.cls_token.expand(x.shape[0], -1, -1)
-        x = torch.cat((cls_tokens, x), dim=1)
+        if self.pool == 'cls':
+            cls_tokens = self.cls_token.expand(x.shape[0], -1, -1)
+            x = torch.cat((cls_tokens, x), dim=1)
 
         # add position embedding
         x = x + self.pos_embed
@@ -70,7 +77,7 @@ class TimeTransformer(nn.Module):
         x = self.blocks(x)
 
         # using token feature as classification head or avgerage pooling for all feature
-        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+        x = self.avg_pool(x.permute((0, 2, 1))).squeeze() if self.pool == 'mean' else x[:, 0]
 
         # classify
         pred = self.classifier(x)

@@ -22,7 +22,7 @@ parser.add_argument('--device', default='cuda', type=str,
                     help='cpu or cuda')
 parser.add_argument('--home_path', default=home_dir, type=str,
                     help='Project home directory')
-parser.add_argument('--epochs', default=40, type=int,
+parser.add_argument('--epochs', default=30, type=int,
                     help='total number of traning epoch')
 parser.add_argument('--lr', default=3e-4, type=float,
                     help='the inital learning rate')
@@ -50,25 +50,52 @@ train_dataset = Load_Dataset(train_dataset)
 train_loader = torch.utils.data.DataLoader(
     dataset=train_dataset, batch_size=128, shuffle=True, drop_last=False, num_workers=0)
 
+valid_dataset = torch.load(os.path.join('./data/val.pt'))
+valid_dataset = Load_Dataset(valid_dataset)
+valid_loader = torch.utils.data.DataLoader(
+    dataset=valid_dataset, batch_size=512, shuffle=True, drop_last=False, num_workers=0)
+
 criterion = nn.CrossEntropyLoss()
 model = TimeTransformer().to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=5e-2)
 
+his_valid = 1
+count = 0
+step = 5
 for epoch in range(args.epochs):
-    total_loss = []
-    total_acc = []
+    train_loss = []
+    train_acc = []
     model.train()
     for _, (data, label) in enumerate(train_loader):
         data, label = data.float().to(device), label.long().to(device)
         optimizer.zero_grad()
         pred = model(data)
         loss = criterion(pred, label)
-        total_loss.append(loss.item())
-        total_acc.append(label.eq(pred.detach().argmax(dim=1)).float().mean())
+        train_loss.append(loss.item())
+        train_acc.append(label.eq(pred.detach().argmax(dim=1)).float().mean())
         loss.backward()
         optimizer.step()
     print("Training->Epoch:{:0>2d}, Loss:{:.3f}, Acc:{:.3f}.".format(epoch,
-        torch.tensor(total_loss).mean(), torch.tensor(total_acc).mean()))
+        torch.tensor(train_loss).mean(), torch.tensor(train_acc).mean()))
+    valid_loss = []
+    model.eval()
+    with torch.no_grad():
+        train_loss = []
+        outs = np.array([])
+        trgs = np.array([])
+        for data, label in valid_loader:
+            data, label = data.float().to(device), label.long().to(device)
+            pred = model(data)
+            loss = criterion(pred, label)
+            valid_loss.append(loss.item())
+    valid_loss = torch.tensor(valid_loss).mean()
+    if his_valid > valid_loss:
+        count = 0
+        his_valid = valid_loss
+    elif count < step:
+        count+=1
+    else:
+        break
 
 # chkpoint = {'model': model.state_dict()} 
 # torch.save(chkpoint, os.path.join(home_dir, 'supervised.pt'))
@@ -80,14 +107,14 @@ test_loader = torch.utils.data.DataLoader(
 
 model.eval()
 with torch.no_grad():
-    total_loss = []
+    train_loss = []
     outs = np.array([])
     trgs = np.array([])
     for data, label in test_loader:
         data, label = data.float().to(device), label.long().to(device)
         pred = model(data)
         loss = criterion(pred, label)
-        total_loss.append(loss.item())
+        train_loss.append(loss.item())
         pred = pred.max(1, keepdim=True)[1]  
         outs = np.append(outs, pred.cpu().numpy())
         trgs = np.append(trgs, label.data.cpu().numpy())

@@ -39,4 +39,4 @@ def _calc_metrics(pred_labels, true_labels, log_dir, home_path):
     cm_Save_path = os.path.join(home_path, log_dir, cm_file_name)
     torch.save(cm, cm_Save_path)
 
-    print("Validation: Acc:{:.2f}, F1:{:.2f}".format(df.loc["accuracy"]["W"], df["macro avg"]["f1-score"]))
+    print("Testing: Acc:{:.2f}, F1:{:.2f}".format(df.loc["accuracy"]["W"], df["macro avg"]["f1-score"]))
