@@ -18,18 +18,21 @@ class PatchEmbed(nn.Module):
 
 
 class FreqEmbed(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super().__init__()
-    
+        self.length = 200
+        self.nfft = 256
+        self.proj = nn.Linear(self.nfft//2+1, 128)
+
     def forward(self, x):
         with torch.no_grad():
-            length = 200
             x = x.reshape(x.shape[0], x.shape[-1])
-            win = torch.hamming_window(length).to(x.device)
-            x = torch.stft(x, n_fft=256, hop_length=length//2, win_length=length, window=win, return_complex=True)
+            win = torch.hamming_window(self.length).to(x.device)
+            x = torch.stft(x, self.nfft, self.length//2, self.length, win, return_complex=True)
             x = torch.abs(x)
             x = torch.tensor(20, device=x.device) * torch.log10(x)
-            x = torch.permute(x, (0, 2, 1))[:, 1:-1, :128]
+            x = torch.permute(x, (0, 2, 1))
+        x = self.proj(x)
         return x
 
 
