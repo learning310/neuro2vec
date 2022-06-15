@@ -112,6 +112,6 @@ class neuro2vec(nn.Module):
         fourier_loss = fourier_loss.mean()
         
         # total loss
-        loss = temporal_loss + fourier_loss
+        loss = fourier_loss
 
-        return loss, tempral_pred, mask, fourier_pred
+        return loss, fourier_pred, mask

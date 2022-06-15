@@ -4,13 +4,15 @@ import torch
 import argparse
 from models.neuro2vec import neuro2vec
 from misc.dataset import Load_Dataset
-from misc.utils import adjust_learning_rate
+from logger import setup_logging 
+from misc.utils import adjust_learning_rate, get_logger
+
 
 home_dir = os.getcwd()
 parser = argparse.ArgumentParser()
-parser.add_argument('--experiment_description', default='MAE', type=str,
+parser.add_argument('--experiment_description', default='neuro2vec', type=str,
                     help='Experiment Description')
-parser.add_argument('--run_description', default='test', type=str,
+parser.add_argument('--run_description', default='pretrain', type=str,
                     help='Experiment Description')
 parser.add_argument('--seed', default=0, type=int,
                     help='seed value')
@@ -43,6 +45,9 @@ experiment_log_dir = os.path.join(
     logs_save_dir, experiment_description, run_description, f"seed_{SEED}")
 os.makedirs(experiment_log_dir, exist_ok=True)
 
+setup_logging(experiment_log_dir)
+logger = get_logger("train")
+
 train_dataset = torch.load(os.path.join('./data/train.pt'))
 train_dataset = Load_Dataset(train_dataset)
 train_loader = torch.utils.data.DataLoader(
@@ -66,7 +71,7 @@ for epoch in range(1, args.epochs+1):
         loss.backward()
         optimizer.step()
     adjust_learning_rate(optimizer, epoch, args)
-    print("Training->Epoch:{:0>2d}, Loss:{:.3f}".format(epoch,torch.tensor(total_loss).mean()))
+    logger.info("Training->Epoch:{:0>3d}, Loss:{:.3f}".format(epoch,torch.tensor(total_loss).mean()))
     if epoch % interval == 0:
         chkpoint = {'model': model.state_dict()} 
         torch.save(chkpoint, os.path.join(home_dir, str('epoch'+str(epoch)+'_chkpoint.pt')))

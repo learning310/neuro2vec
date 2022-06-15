@@ -5,14 +5,14 @@ from torch import nn
 import argparse
 from models.tit import TimeTransformer
 from misc.dataset import Load_Dataset
-from misc.metrics import accuracy_metric, _calc_metrics
+from misc.metrics import _calc_metrics
 from misc.utils import adjust_learning_rate, set_requires_grad
 
 home_dir = os.getcwd()
 parser = argparse.ArgumentParser()
-parser.add_argument('--experiment_description', default='TiT', type=str,
+parser.add_argument('--experiment_description', default='neuro2vec', type=str,
                     help='Experiment Description')
-parser.add_argument('--run_description', default='test1', type=str,
+parser.add_argument('--run_description', default='finetune', type=str,
                     help='Experiment Description')
 parser.add_argument('--seed', default=0, type=int,
                     help='seed value')
@@ -54,7 +54,7 @@ criterion = nn.CrossEntropyLoss()
 model = TimeTransformer().to(device)
 
 model_dict = model.state_dict()
-pretrained_dict = torch.load(os.path.abspath("./epoch200_chkpoint.pt"))['model']
+pretrained_dict = torch.load(os.path.abspath("./epoch100_chkpoint.pt"))['model']
 del_list = ['pos_embed', 'mask_token','temporal_pred', 'amplitude_pred', 'phase_pred']
 pretrained_dict_copy = pretrained_dict.copy()
 for i in pretrained_dict_copy.keys():
@@ -63,7 +63,7 @@ for i in pretrained_dict_copy.keys():
             del pretrained_dict[i]
 model_dict.update(pretrained_dict)
 model.load_state_dict(model_dict)
-set_requires_grad(model, pretrained_dict, requires_grad=False)
+# set_requires_grad(model, pretrained_dict, requires_grad=False)
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=1e-2)
 
@@ -77,7 +77,7 @@ for epoch in range(args.epochs):
         pred = model(data)
         loss = criterion(pred, label)
         total_loss.append(loss.item())
-        total_acc.append(accuracy_metric(pred, label))
+        total_acc.append(label.eq(pred.detach().argmax(dim=1)).float().mean())
         loss.backward()
         optimizer.step()
     # adjust_learning_rate(optimizer, epoch, args)
